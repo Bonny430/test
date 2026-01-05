@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview: Access Granted</title>
+    <title>System Access: 0107</title>
     <style>
+        /* --- 基礎設定 --- */
         :root {
             --green: #0f0;
             --dark-green: #003300;
@@ -58,12 +59,20 @@
 
         .log-line {
             margin: 3px 0;
+            word-wrap: break-word;
         }
 
         #timer-box {
+            display: none;
             border: 1px solid var(--green);
             padding: 20px;
             text-align: center;
+            animation: popIn 0.5s ease forwards;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .timer-display {
@@ -74,10 +83,11 @@
             line-height: 1.2;
         }
 
+        /* --- 隱藏連結按鈕樣式 --- */
         .secret-link {
             display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 25px;
+            padding: 12px 25px;
             border: 1px solid var(--green);
             color: var(--bg);
             background-color: var(--green);
@@ -85,12 +95,30 @@
             font-weight: bold;
             font-size: 1rem;
             animation: blink-bg 2s infinite;
+            border-radius: 3px;
         }
         
         @keyframes blink-bg {
-            0%, 100% { opacity: 1; }
+            0% { opacity: 1; }
             50% { opacity: 0.8; }
+            100% { opacity: 1; }
         }
+
+        @media (max-width: 400px) {
+            .timer-display { font-size: 1.4rem; }
+            #terminal { padding: 15px; width: 95%; }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background: var(--green);
+            margin-left: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
 
         .highlight { color: #fff; font-weight: bold; }
     </style>
@@ -103,27 +131,103 @@
             <span>SECURE: TRUE</span>
         </div>
 
-        <div id="console-log">
-            <!-- 直接顯示跑完的日誌 -->
-            <div class="log-line">> 正在初始化系統...</div>
-            <div class="log-line">> 識別身分: [使用者]</div>
-            <div class="log-line">> 權限確認: 已授權 (Authorized)</div>
-            <div class="log-line">> 正在掃描時間軸...</div>
-            <div class="log-line">> 鎖定關鍵事件: 特別日</div>
-            <div class="log-line">> 啟動倒數計時模組...</div>
-            <div class="log-line highlight">> 系統狀態: 慶祝模式已開啟 🎂</div>
-        </div>
+        <div id="console-log"></div>
 
         <div id="timer-box">
-            <div id="countdown" class="timer-display">
-                <span style="color:white;">🎉 ACCESS GRANTED 🎉</span><br>
-                <span style="font-size:1rem; margin-top:10px; display:block;">時間到！慶祝模式啟動！</span>
-                <br>
-                <a href="https://bonny430.github.io/only-for-you/" class="secret-link">> [ 點擊進入專屬頁面 ] <</a>
-            </div>
+            <div style="font-size: 0.8rem; opacity: 0.7;">> 目標日期鎖定 <span id="target-date-display"></span></div>
+            <div id="countdown" class="timer-display">計算中...</div>
         </div>
     </div>
 
+    <script>
+        // ====================================================
+        // 👇👇👇 設定區 (已設為 1/7) 👇👇👇
+        
+        const config = {
+            targetDate: "2026-01-06T00:10:30", 
+            userName: "使用者",
+            redirectUrl: "https://bonny430.github.io/only-for-you/"
+        };
+        
+        // ====================================================
+
+        const logContainer = document.getElementById('console-log');
+        const timerBox = document.getElementById('timer-box');
+        const countdownEl = document.getElementById('countdown');
+        const targetDateDisplay = document.getElementById('target-date-display');
+
+        const dateObj = new Date(config.targetDate);
+        targetDateDisplay.textContent = `${dateObj.getMonth()+1}/${dateObj.getDate()}`;
+
+        const logs = [
+            "正在初始化系統...",
+            `識別身分: [${config.userName}]`,
+            "權限確認: 已授權 (Authorized)",
+            "正在掃描時間軸...",
+            "鎖定關鍵事件: 生日慶典",
+            "啟動倒數計時模組..."
+        ];
+
+        let logIndex = 0;
+
+        function runLogs() {
+            if (logIndex < logs.length) {
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                div.innerHTML = `> ${logs[logIndex]}`;
+                logContainer.appendChild(div);
+                logIndex++;
+                logContainer.scrollTop = logContainer.scrollHeight;
+                setTimeout(runLogs, 600); 
+            } else {
+                timerBox.style.display = 'block';
+                startCountdown();
+            }
+        }
+
+        function startCountdown() {
+            const targetTime = new Date(config.targetDate).getTime();
+
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = targetTime - now;
+
+                if (diff <= 0) {
+                    clearInterval(timer);
+                    showBirthdaySuccess();
+                    return;
+                }
+
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownEl.innerHTML = 
+                    `${d}天 ${h}時 <br>` +
+                    `${m}分 ${s}秒`;
+            }, 1000);
+        }
+
+        // 修改後的慶祝畫面
+        function showBirthdaySuccess() {
+            countdownEl.innerHTML = 
+                `<span style="color:white; display:block; margin-bottom:5px;">🎉 ACCESS GRANTED 🎉</span>` +
+                // 這裡改成了大大的 Happy Birthday
+                `<span style="font-size:1.5rem; display:block; color: white; text-shadow: 0 0 15px white; margin: 15px 0;">Happy Birthday 🎂</span>` +
+                `<a href="${config.redirectUrl}" class="secret-link">> [ 點擊進入專屬頁面 ] <</a>`;
+            
+            const div = document.createElement('div');
+            div.className = 'log-line highlight';
+            div.textContent = "> 偵測到隱藏入口...路徑已建立。";
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        window.onload = runLogs;
+
+    </script>
 </body>
 </html>
+
 
